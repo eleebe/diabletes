@@ -1,48 +1,37 @@
-#!/bin/bash
-# ─────────────────────────────────────────────
-#  🐺 Hombres Lobo de Castronegro — Arranque
-# ─────────────────────────────────────────────
+#!/usr/bin/env bash
+set -e
 
 echo ""
-echo "  🐺  Hombres Lobo de Castronegro"
-echo "  ─────────────────────────────────"
+echo " Hombres Lobo — Firebase Edition"
+echo "==================================="
 echo ""
 
-# Comprobar Node.js
-if ! command -v node &> /dev/null; then
-  echo "  ❌  Node.js no encontrado."
-  echo "      Instálalo desde: https://nodejs.org (v18 o superior)"
-  exit 1
-fi
-
-NODE_VER=$(node -v)
-echo "  ✓  Node.js $NODE_VER"
-
-# Instalar dependencias si faltan
-if [ ! -d "node_modules" ] || [ ! -d "client/node_modules" ]; then
-  echo ""
-  echo "  📦  Instalando dependencias (primera vez, puede tardar un momento)…"
-  echo ""
-  npm run install:all
-  if [ $? -ne 0 ]; then
-    echo ""
-    echo "  ❌  Error instalando dependencias."
-    exit 1
-  fi
-fi
+# Instalar dependencias si no existen
+[ ! -d "server/node_modules" ] && echo "[1/2] Instalando servidor..." && (cd server && npm install)
+[ ! -d "client/node_modules" ] && echo "[2/2] Instalando cliente..."  && (cd client && npm install)
 
 echo ""
-echo "  🚀  Iniciando servidor y cliente…"
-echo ""
-echo "  ┌─────────────────────────────────────────┐"
-echo "  │  Cliente  →  http://localhost:3000       │"
-echo "  │  Servidor →  http://localhost:3001       │"
-echo "  │                                          │"
-echo "  │  Red local: usa la IP que muestra Vite  │"
-echo "  │  para conectar desde otros dispositivos  │"
-echo "  └─────────────────────────────────────────┘"
-echo ""
-echo "  Pulsa Ctrl+C para detener."
+echo " Arrancando servidor (3001) y cliente (3000)..."
 echo ""
 
-npm run dev
+# Servidor en background
+(cd server && node index.js) &
+SERVER_PID=$!
+
+sleep 1
+
+# Cliente Vite
+(cd client && npm run dev) &
+CLIENT_PID=$!
+
+echo ""
+echo " ✅  Servidor:    http://localhost:3001"
+echo " ✅  Cliente:     http://localhost:3000"
+LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "192.168.x.x")
+echo " ✅  Red local:   http://${LOCAL_IP}:3000"
+echo ""
+echo " Pulsa Ctrl+C para detener todo."
+
+# Esperar y limpiar al salir
+trap "kill $SERVER_PID $CLIENT_PID 2>/dev/null; exit 0" INT TERM
+wait

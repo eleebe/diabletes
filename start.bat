@@ -1,40 +1,29 @@
 @echo off
-chcp 65001 > nul
 echo.
-echo   🐺  Hombres Lobo de Castronegro
-echo   ---------------------------------
+echo  Hombres Lobo - Firebase Edition
+echo ===================================
 echo.
 
-where node >nul 2>nul
-if %errorlevel% neq 0 (
-  echo   ERROR: Node.js no encontrado.
-  echo   Instalalo desde: https://nodejs.org ^(v18 o superior^)
-  pause
-  exit /b 1
+REM Instalar dependencias si no existen
+if not exist "server\node_modules" (
+    echo [1/2] Instalando dependencias del servidor...
+    cd server && npm install && cd ..
 )
-
-for /f "tokens=*" %%i in ('node -v') do set NODE_VER=%%i
-echo   OK  Node.js %NODE_VER%
-
-if not exist "node_modules" (
-  echo.
-  echo   Instalando dependencias ^(primera vez^)...
-  echo.
-  call npm run install:all
-  if %errorlevel% neq 0 (
-    echo   ERROR instalando dependencias.
-    pause
-    exit /b 1
-  )
+if not exist "client\node_modules" (
+    echo [2/2] Instalando dependencias del cliente...
+    cd client && npm install && cd ..
 )
 
 echo.
-echo   Iniciando...
-echo   Cliente  --^>  http://localhost:3000
-echo   Servidor --^>  http://localhost:3001
-echo.
-echo   Pulsa Ctrl+C para detener.
+echo  Arrancando servidor y cliente...
+echo  - Servidor: http://localhost:3001
+echo  - Cliente:  http://localhost:3000
+echo  - Red local: http://%COMPUTERNAME%:3000
 echo.
 
-npm run dev
+start "Servidor Firebase" cmd /k "cd server && node index.js"
+timeout /t 2 /nobreak >nul
+start "Cliente Vite" cmd /k "cd client && npm run dev"
+
+echo  Todo arrancado. Abre http://localhost:3000 en el navegador.
 pause
